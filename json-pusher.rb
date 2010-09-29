@@ -4,7 +4,6 @@ require 'pusher'
 require 'redis'
 
 Pusher.app_id = 2192
-Pusher.app_id = '2192'
 Pusher.key = 'c4d8da3b6c36091f0ac4'
 Pusher.secret = '50d3a48cd3e7133e7f55'
 
@@ -13,6 +12,7 @@ begin
 rescue
   puts "I couldn't connect to Redis, so I won't be storing the last messages for this channel.\nTo enable it, install Redis, run 'redis-server' and retry."
 end
+
 
 get '/' do
   "<p>This app echoes whatever you POST into /:channel to Pusher.</p>"
@@ -23,18 +23,20 @@ post '/' do
 end
 
 get '/:channel/last_messages.js' do
-  <<-EOS
-    document.on("dom:loaded", function(){
+  if @@db
+    <<-EOS
+      document.on("dom:loaded", function(){
 
-      last_messages = (#{@@db["channels/#{params[:channel]}/last"] || "[]"});
-      last_messages.each(function(m) {
-        console.log("Loading recent message " + m.id)
-        delete m.id
-        messages.set(m.id, m)
+        last_messages = (#{@@db["channels/#{params[:channel]}/last"] || "[]"});
+        last_messages.each(function(m) {
+          console.log("Loading recent message " + m.id)
+          delete m.id
+          messages.set(m.id, m)
+        })
+
       })
-
-    })
-  EOS
+    EOS
+  end
 end
 
 get '/:channel' do
@@ -54,7 +56,7 @@ def send_payload(data)
 end
 
 def save_to_redis(params)
-  begin
+  if @@db
     last_messages = JSON.parse(@@db["channels/#{params[:channel]}/last"] || "[]")
     # Keep only the latest 20 messages
     last_messages.shift if last_messages.size == 19
@@ -67,6 +69,5 @@ def save_to_redis(params)
     key = "channels/#{params[:channel]}/payloads/#{params[:id]}"
     puts "Saving to Redis: #{key}"
     @@db[key] = JSON.dump(params)
-  rescue
   end
 end
