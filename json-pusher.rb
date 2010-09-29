@@ -9,7 +9,9 @@ Pusher.secret = '50d3a48cd3e7133e7f55'
 
 def db
   begin
-    @@db ||= Redis.new
+    # Uncomment to enable Redis
+    # @@db ||= Redis.new
+    nil
   rescue
     msg = "I couldn't connect to Redis, so I won't be storing the last messages for this channel.\nTo enable it, install Redis, run 'redis-server' and retry."
     @@display_once ||= puts(msg) || true
