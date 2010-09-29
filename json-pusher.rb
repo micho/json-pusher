@@ -52,7 +52,7 @@ post '/:channel' do
 end
 
 def send_payload(data)
-  Pusher[data[:channel]].trigger('syncable', data)
+  Pusher['asd'].trigger('syncable', data)
 
   save_to_redis(params) if params[:id] && params[:channel]
 
